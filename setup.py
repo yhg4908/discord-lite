@@ -14,7 +14,8 @@ setup(
     },
     packages=find_packages(),
     install_requires=[
-        "aiohttp<=3.11.11"
+        "aiohttp>=3.11.11",
+        "websockets>=14.1"
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',
