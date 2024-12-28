@@ -13,7 +13,9 @@ setup(
         "Repository": "https://github.com/yhg4908/discord-lite",
     },
     packages=find_packages(),
-    install_requires=[],
+    install_requires=[
+        "aiohttp<=3.11.11"
+    ],
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
