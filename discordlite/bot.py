@@ -1,48 +1,35 @@
-# discordlite/bot.py
-import aiohttp
 import asyncio
+from .gateway import Gateway
+from .http import HTTPClient
 
 class Bot:
-    def __init__(self):
-        """
-        Initializes the bot instance.
-        """
+    """Lightweight Discord bot"""
+    def __init__(self, prefix: str, intents):
+        self.prefix = prefix
+        self.intents = intents
         self.token = None
-        self.session = None
-        self.base_url = "https://discord.com/api/v10"
-        self.loop = asyncio.get_event_loop()
+        self.gateway = None
+        self.http = None
+        self.event_handlers = {}  # Stores event handlers
 
-    async def _authenticate(self):
-        """
-        Authenticates the bot using the provided token.
-        """
-        headers = {
-            "Authorization": f"Bot {self.token}",
-            "Content-Type": "application/json",
-        }
-        async with self.session.get(f"{self.base_url}/users/@me", headers=headers) as response:
-            if response.status == 200:
-                user_data = await response.json()
-                print(f"Logged in as {user_data['username']}#{user_data['discriminator']}")
-            else:
-                raise Exception(f"Failed to authenticate: {response.status} - {await response.text()}")
+    def add_event(self, event_name: str, handler):
+        """Registers an event handler"""
+        if not asyncio.iscoroutinefunction(handler):
+            raise TypeError(f"Handler for {event_name} must be a coroutine function")
+        self.event_handlers[event_name] = handler
 
-    def login(self, token: str):
-        """
-        Logs the bot in using the given token.
-        :param token: The bot token provided by Discord.
-        """
+    def run(self, token: str):
+        """Runs the bot"""
         self.token = token
-        self.session = aiohttp.ClientSession(loop=self.loop)
-        try:
-            self.loop.run_until_complete(self._authenticate())
-        except Exception as e:
-            print(f"Error: {e}")
-        finally:
-            self.loop.run_until_complete(self.session.close())
-            self.session = None
+        self.http = HTTPClient(token)
+        self.gateway = Gateway(token, self.intents, self.event_handlers)
 
-# Example usage:
-# if __name__ == "__main__":
-#     bot = Bot()
-#     bot.login("YOUR_BOT_TOKEN")
+        # Use asyncio.run to start the async loop
+        asyncio.run(self._run_bot())
+
+    async def _run_bot(self):
+        """Internal async method to run the bot"""
+        try:
+            await self.gateway.connect()
+        except KeyboardInterrupt:
+            await self.gateway.close()
