@@ -16,4 +16,4 @@ Please check the wiki for how to use discord-lite!
 
 https://github.com/yhg4908/discord-lite/wiki
 
-https://pypi.org/project/discord/lite
+https://pypi.org/project/discord-lite
