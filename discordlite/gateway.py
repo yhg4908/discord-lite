@@ -1,5 +1,3 @@
-# discordlite/gateway.py
-
 import websockets
 import json
 
