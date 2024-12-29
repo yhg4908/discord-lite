@@ -16,15 +16,21 @@ class Bot:
         self.http = None
         self.event_handlers = {}
         self.commands = {}
-        self.command_permissions = {}  # 명령어별 권한 제한
-        self.command_roles = {}        # 명령어별 역할 제한
+        self.command_permissions = {}
+        self.command_roles = {}
+        self.username = "Unknown"
+        self.active_events = []
+        self.active_commands = []
 
     def add_event(self, event_name: str, handler):
+        """Registers an event and adds to active events"""
         self.event_handlers[event_name] = handler
+        self.active_events.append(event_name)
 
     def add_command(self, command_name: str, handler, required_permissions=None, required_roles=None):
-        """Adds a command with optional permissions or role restrictions"""
+        """Registers a command and adds to active commands"""
         self.commands[command_name] = handler
+        self.active_commands.append(command_name)
         if required_permissions:
             self.command_permissions[command_name] = required_permissions
         if required_roles:
@@ -38,6 +44,16 @@ class Bot:
         """Checks if user has one of the required roles"""
         return any(role in user_roles for role in required_roles)
 
+    @property
+    def event_count(self):
+        """Returns the count of active events"""
+        return len(self.active_events)
+
+    @property
+    def command_count(self):
+        """Returns the count of active commands"""
+        return len(self.active_commands)
+
     def run(self, token: str):
         """Runs the bot"""
         self.token = token
@@ -45,8 +61,9 @@ class Bot:
         asyncio.run(self._initialize_and_run())
 
     async def _initialize_and_run(self):
-        """Initializes HTTP client and starts gateway connection"""
+        """Initializes HTTP client, fetches username, and starts gateway"""
         await self.http.initialize()
+        self.username = await self.http.get_bot_username()
         self.gateway = Gateway(self.token, self.intents, self.event_handlers, self.commands, self.prefix, self.http)
         try:
             await self.gateway.connect()
