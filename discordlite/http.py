@@ -1,19 +1,30 @@
 import aiohttp
 import os
+import json
 
 class HTTPClient:
     BASE_URL = "https://discord.com/api/v10"
     MAX_FILE_SIZE = 8 * 1024 * 1024  # 8MB
-    ALLOWED_FILE_TYPES = {".txt", ".png", ".jpg", ".jpeg", ".gif"}  # 허용 파일 형식
+    ALLOWED_FILE_TYPES = {".txt", ".png", ".jpg", ".jpeg", ".gif"}
 
     def __init__(self, token):
         self.token = token
         self.session = None
 
     async def initialize(self):
+        """Initializes the aiohttp session"""
         self.session = aiohttp.ClientSession(
             headers={"Authorization": f"Bot {self.token}"}
         )
+
+    async def get_bot_username(self):
+        """Fetches bot username from Discord API"""
+        url = f"{self.BASE_URL}/users/@me"
+        async with self.session.get(url) as response:
+            if response.status != 200:
+                raise DiscordHTTPException(response.status, await response.text())
+            data = await response.json()
+            return data.get("username", "Unknown")
 
     async def send_message(self, channel_id: str, content: str, file_paths: list = None):
         """Sends a message to a Discord channel with optional file attachments"""
@@ -21,7 +32,6 @@ class HTTPClient:
         payload = {"content": content}
         form = aiohttp.FormData()
 
-        # 파일 처리
         valid_files = []
         if file_paths:
             for file_path in file_paths:
@@ -37,26 +47,27 @@ class HTTPClient:
                 valid_files.append(file_path)
 
             for file_path in valid_files:
-                with open(file_path, "rb") as file:
-                    form.add_field("file", file, filename=os.path.basename(file_path))
+                form.add_field("file", open(file_path, "rb"), filename=os.path.basename(file_path))
 
-        # 첨부 파일이 있을 경우 폼 데이터 추가
-        if valid_files:
-            form.add_field("payload_json", json.dumps(payload))
-            async with self.session.post(url, data=form) as response:
-                if response.status != 200:
-                    raise DiscordHTTPException(response.status, await response.text())
-        else:
+        if not valid_files:
             async with self.session.post(url, json=payload) as response:
                 if response.status != 200:
                     raise DiscordHTTPException(response.status, await response.text())
+            return
+
+        form.add_field("payload_json", json.dumps(payload))
+        async with self.session.post(url, data=form) as response:
+            if response.status != 200:
+                raise DiscordHTTPException(response.status, await response.text())
 
     async def close(self):
+        """Closes the aiohttp session"""
         if self.session:
             await self.session.close()
 
 
 class DiscordHTTPException(Exception):
+    """Custom exception for Discord HTTP errors"""
     def __init__(self, status_code, response_text):
         super().__init__(f"HTTP error {status_code}: {response_text}")
         self.status_code = status_code
