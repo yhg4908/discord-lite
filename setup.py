@@ -9,6 +9,7 @@ setup(
     long_description=open('README.md').read() if open('README.md', 'r').read() else '',
     long_description_content_type='text/markdown',
     project_urls={
+        "Documentation": "https://github.com/yhg4908/discord-lite/wiki",
         "Issues": "https://github.com/yhg4908/discord-lite/issues",
         "Repository": "https://github.com/yhg4908/discord-lite",
     },
