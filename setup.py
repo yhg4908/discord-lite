@@ -32,6 +32,6 @@ setup(
         'Programming Language :: Python :: 3.13',
     ],
     python_requires='>=3.7',
-    package_data={'': ['LICENSE', 'README.md']},
+    package_data={'': ['LICENSE', 'README.md', 'requirements.txt']},
     keywords='discord bot discordbot lite discord-lite lightweight http websockets api',
 )
